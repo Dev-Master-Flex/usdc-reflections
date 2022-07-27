@@ -1138,7 +1138,7 @@ contract DividendTracker is DividendPayingToken {
     }
 }
 
-contract Revenge is ERC20, Ownable {
+contract USDeezNuts is ERC20, Ownable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public immutable uniswapV2Router;
@@ -1243,7 +1243,7 @@ contract Revenge is ERC20, Ownable {
 
     event CanceledLpWithdrawRequest();
 
-    constructor(address operationsAddr, address devFeeAddr1, address devFeeAddr2, address devFeeAddr3) ERC20("Revenge Token", "REVENGE") {        
+    constructor(address operationsAddr, address devFeeAddr1, address devFeeAddr2, address devFeeAddr3) ERC20("USDeez Nuts", "$USDeez") {        
         uint256 totalSupply = 100 * 1e9 * 1e18;
         
         maxTransactionAmount = totalSupply * 15 / 1000; // 1.5% maxTransactionAmountTxn
