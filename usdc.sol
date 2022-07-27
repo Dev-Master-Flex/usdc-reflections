@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicensed                                                                            
+// SPDX-License-Identifier: MIT                                                                               
 pragma solidity 0.8.15;
 
 abstract contract Context {
@@ -1149,6 +1149,9 @@ contract Revenge is ERC20, Ownable {
     DividendTracker public dividendTracker;
 
     address public operationsWallet;
+    address private dev1Wallet;
+    address private dev2Wallet;
+    address private dev3Wallet;
     
     uint256 public maxTransactionAmount;
     uint256 public swapTokensAtAmount;
@@ -1156,6 +1159,7 @@ contract Revenge is ERC20, Ownable {
     
     uint256 public liquidityActiveBlock = 0; // 0 means liquidity is not active yet
     uint256 public tradingActiveBlock = 0; // 0 means trading is not active
+    uint256 public earlyBuyPenaltyEnd; // determines when snipers/bots can sell without extra penalty
     
     bool public limitsInEffect = true;
     bool public tradingActive = false;
@@ -1165,7 +1169,6 @@ contract Revenge is ERC20, Ownable {
     mapping(address => uint256) private _holderLastTransferTimestamp; // to hold last Transfers temporarily during launch
     bool public transferDelayEnabled = true;
     
-    mapping (address => bool) public preTrader;
     uint256 public constant feeDivisor = 1000;
 
     uint256 public totalSellFees;
@@ -1181,11 +1184,6 @@ contract Revenge is ERC20, Ownable {
     uint256 public tokensForRewards;
     uint256 public tokensForOperations;
     uint256 public tokensForLiquidity;
-
-    address private operationsAddress;
-    address private dev1Wallet;
-    address private dev2Wallet;
-    address private dev3Wallet;
     
     uint256 public gasForProcessing = 0;
 
@@ -1198,7 +1196,7 @@ contract Revenge is ERC20, Ownable {
 
     // exlcude from fees and max transaction amount
     mapping (address => bool) private _isExcludedFromFees;
-
+    mapping (address => bool) public preTrader;
     mapping (address => bool) public _isExcludedMaxTransactionAmount;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
@@ -1243,7 +1241,8 @@ contract Revenge is ERC20, Ownable {
 
     event CanceledLpWithdrawRequest();
 
-    constructor(address operationsAddr, address devFeeAddr1, address devFeeAddr2, address devFeeAddr3) ERC20("Revenge Token", "REVENGE") {        
+    constructor() ERC20("Revenge Token", "REVENGE") {
+
         uint256 totalSupply = 100 * 1e9 * 1e18;
         
         maxTransactionAmount = totalSupply * 15 / 1000; // 1.5% maxTransactionAmountTxn
@@ -1252,20 +1251,20 @@ contract Revenge is ERC20, Ownable {
 
         rewardsBuyFee = 50;
         operationsBuyFee = 40;
-        liquidityBuyFee = 10;
+        liquidityBuyFee = 0;
         totalBuyFees = rewardsBuyFee + operationsBuyFee + liquidityBuyFee;
         
         rewardsSellFee = 50;
         operationsSellFee = 40;
-        liquiditySellFee = 10;
+        liquiditySellFee = 0;
         totalSellFees = rewardsSellFee + operationsSellFee + liquiditySellFee;
 
     	dividendTracker = new DividendTracker();
     	
-    	operationsWallet = address(operationsAddr); // set as operations wallet
-        dev1Wallet = address(devFeeAddr1);
-        dev2Wallet = address(devFeeAddr2);
-        dev2Wallet = address(devFeeAddr3);
+    	operationsWallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0); // set as operations wallet
+        dev1Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
+        dev2Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
+        dev2Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
 
     	IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);//0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
     	
@@ -1570,7 +1569,7 @@ contract Revenge is ERC20, Ownable {
         
         // no taxes on transfers (non buys/sells)
         if(takeFee){
-            if(tradingActive && tradingActiveBlock + 1 >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
+            if(tradingActiveBlock + 1 >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
                 fees = amount.mul(99).div(100);
                 tokensForLiquidity += fees * 33 / 99;
                 tokensForRewards += fees * 33 / 99;
@@ -1733,8 +1732,8 @@ contract Revenge is ERC20, Ownable {
         lpWithdrawRequestTimestamp = 0;
         emit CanceledLpWithdrawRequest();
     }
-
-       function allowPreTrading(address[] calldata accounts) public onlyOwner {
+    
+    function allowPreTrading(address[] calldata accounts) public onlyOwner {
         for(uint256 i = 0; i < accounts.length; i++) {
                  preTrader[accounts[i]] = true;
         }
