@@ -723,7 +723,7 @@ contract DividendPayingToken is DividendPayingTokenInterface, DividendPayingToke
       
       // Mainnet
 
-      rewardTokens.push(address(0x07865c6E87B9F70255377e024ace6630C1Eaa37F)); // USDC - 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+      rewardTokens.push(address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)); // USDC ROPSTEN TEST -> 0x07865c6E87B9F70255377e024ace6630C1Eaa37F
       
       nextRewardToken = rewardTokens[0];
   }
