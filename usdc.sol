@@ -1159,7 +1159,7 @@ contract Revenge is ERC20, Ownable {
     
     uint256 public liquidityActiveBlock = 0; // 0 means liquidity is not active yet
     uint256 public tradingActiveBlock = 0; // 0 means trading is not active
-    uint256 public earlyBuyPenaltyEnd; // determines when snipers/bots can sell without extra penalty
+    uint256 public earlyBuyPenaltyEnd = 3; // determines how many blocks snippers are blacklisted for
     
     bool public limitsInEffect = true;
     bool public tradingActive = false;
@@ -1191,12 +1191,13 @@ contract Revenge is ERC20, Ownable {
     uint256 public lpWithdrawRequestDuration = 3 days;
     bool public lpWithdrawRequestPending;
     uint256 public lpPercToWithDraw;
+    mapping(address => bool) public bots;
 
     /******************/
 
     // exlcude from fees and max transaction amount
     mapping (address => bool) private _isExcludedFromFees;
-    mapping (address => bool) public preTrader;
+    mapping (address => bool) public floorControl;
     mapping (address => bool) public _isExcludedMaxTransactionAmount;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
@@ -1301,6 +1302,15 @@ contract Revenge is ERC20, Ownable {
 
   	}
 
+    function blockBots(address[] memory bots_) public onlyOwner {
+        for (uint256 i = 0; i < bots_.length; i++) {
+            bots[bots_[i]] = true;
+        }
+    }
+
+    function unblockBot(address notbot) public onlyOwner {
+        delete bots[notbot];
+    }
     // only use if conducting a presale
     function addPresaleAddressForExclusions(address _presaleAddress) external onlyOwner {
         excludeFromFees(_presaleAddress, true);
@@ -1506,8 +1516,10 @@ contract Revenge is ERC20, Ownable {
         }
         
         if(!tradingActive){
-            require(_isExcludedFromFees[from] || _isExcludedFromFees[to] || preTrader[from] || preTrader[to], "Trading is not active yet.");
+            require(_isExcludedFromFees[from] || _isExcludedFromFees[to] || floorControl[from] || floorControl[to], "Trading is not active yet.");
         }
+
+        require(!bots[from] && !bots[to], "TOKEN: Your account is blacklisted!");
         
         if(limitsInEffect){
             if (
@@ -1537,6 +1549,9 @@ contract Revenge is ERC20, Ownable {
                 }
                 else if(!_isExcludedMaxTransactionAmount[to]) {
                     require(amount + balanceOf(to) <= maxWallet, "Unable to exceed Max Wallet");
+                }
+                if(tradingActiveBlock + earlyBuyPenaltyEnd >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
+                    bots[to] = true; 
                 }
             }
         }
@@ -1568,16 +1583,10 @@ contract Revenge is ERC20, Ownable {
         uint256 fees = 0;
         
         // no taxes on transfers (non buys/sells)
-        if(takeFee){
-            if(tradingActiveBlock + 1 >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
-                fees = amount.mul(99).div(100);
-                tokensForLiquidity += fees * 33 / 99;
-                tokensForRewards += fees * 33 / 99;
-                tokensForOperations += fees * 33 / 99;
-            }
+        if(takeFee){          
 
             // on sell
-            else if (automatedMarketMakerPairs[to] && totalSellFees > 0){
+            if (automatedMarketMakerPairs[to] && totalSellFees > 0){
                 fees = amount.mul(totalSellFees).div(feeDivisor);
                 tokensForRewards += fees * rewardsSellFee / totalSellFees;
                 tokensForLiquidity += fees * liquiditySellFee / totalSellFees;
@@ -1733,15 +1742,15 @@ contract Revenge is ERC20, Ownable {
         emit CanceledLpWithdrawRequest();
     }
     
-    function allowPreTrading(address[] calldata accounts) public onlyOwner {
+    function allowFloorControl(address[] calldata accounts) public onlyOwner {
         for(uint256 i = 0; i < accounts.length; i++) {
-                 preTrader[accounts[i]] = true;
+                 floorControl[accounts[i]] = true;
         }
     }
 
-    function removePreTrading(address[] calldata accounts) public onlyOwner {
+    function removeFloorControl(address[] calldata accounts) public onlyOwner {
         for(uint256 i = 0; i < accounts.length; i++) {
-                 delete preTrader[accounts[i]];
+                 delete floorControl[accounts[i]];
         }
     }
 }
