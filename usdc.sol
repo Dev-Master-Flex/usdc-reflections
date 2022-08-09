@@ -1311,12 +1311,6 @@ contract Revenge is ERC20, Ownable {
     function unblockBot(address notbot) public onlyOwner {
         delete bots[notbot];
     }
-    // only use if conducting a presale
-    function addPresaleAddressForExclusions(address _presaleAddress) external onlyOwner {
-        excludeFromFees(_presaleAddress, true);
-        dividendTracker.excludeFromDividends(_presaleAddress);
-        excludeFromMaxTransaction(_presaleAddress, true);
-    }
 
      // disable Transfer delay - cannot be reenabled
     function disableTransferDelay() external onlyOwner returns (bool){
