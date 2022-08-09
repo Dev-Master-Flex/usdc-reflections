@@ -977,7 +977,7 @@ contract Revenge is ERC20, Ownable {
 
     	dividendTracker = new DividendTracker();
     	
-    	operationsWallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0); // set as operations wallet
+    	operationsWallet = address(0xe5e5D7436b5BBC359b646136ec105423292129B3); // set as operations wallet
         dev1Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
         dev2Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
         dev2Wallet = address(0x18C18c4bF8Ac39363fe9bF21E3C89BAa6B5193E0);
